@@ -17,9 +17,6 @@ public class ParameterService {
     @Value("${output.dir}")
     private String outputDir;
 
-    @Value("${current.table.prefix}")
-    private String currentTablePrefix;
-
     @Value("${target.table.prefix}")
     private String targetTablePrefix;
 
@@ -55,14 +52,6 @@ public class ParameterService {
 
     public void setOutputDir(String outputDir) {
         this.outputDir = outputDir;
-    }
-
-    public String getCurrentTablePrefix() {
-        return currentTablePrefix;
-    }
-
-    public void setCurrentTablePrefix(String currentTablePrefix) {
-        this.currentTablePrefix = currentTablePrefix;
     }
 
     public String getTargetTablePrefix() {

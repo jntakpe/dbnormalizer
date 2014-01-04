@@ -1,5 +1,6 @@
 package com.github.jntakpe.dbnormalizer.domain;
 
+import java.util.HashSet;
 import java.util.Set;
 
 /**
@@ -13,11 +14,13 @@ public class Table {
 
     private String prefix;
 
-    private Set<String> columns;
+    private Set<String> columns = new HashSet<>();
 
     private String pk;
 
-    private Set<String> constraints;
+    private Set<String> fks = new HashSet<>();;
+
+    private Set<String> constraints = new HashSet<>();;
 
     public String getName() {
         return name;
@@ -43,12 +46,28 @@ public class Table {
         this.columns = columns;
     }
 
+    public void addColumn(String column) {
+        columns.add(column);
+    }
+
     public String getPk() {
         return pk;
     }
 
     public void setPk(String pk) {
         this.pk = pk;
+    }
+
+    public Set<String> getFks() {
+        return fks;
+    }
+
+    public void setFks(Set<String> fks) {
+        this.fks = fks;
+    }
+
+    public void addFk(String fk) {
+        fks.add(fk);
     }
 
     public Set<String> getConstraints() {

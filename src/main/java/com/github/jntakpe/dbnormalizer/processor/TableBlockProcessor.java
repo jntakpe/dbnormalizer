@@ -2,7 +2,7 @@ package com.github.jntakpe.dbnormalizer.processor;
 
 import com.github.jntakpe.dbnormalizer.domain.Table;
 import com.github.jntakpe.dbnormalizer.service.ParameterService;
-import org.springframework.beans.factory.annotation.Value;
+import org.apache.commons.lang3.StringUtils;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -30,14 +30,21 @@ public final class TableBlockProcessor {
         String line;
         int i = 0;
         while ((line = reader.readLine()) != null) {
-            if (line.isEmpty()) break;
-            if (i == 0) extractPK(line);
-            else {
-
+            if (StringUtils.isBlank(line) || isEnd(line)) break;
+            if (i == 0) {
+                extractPK(line);
+            } else {
+                if (isConstraint(line)) extractConstraint();
+                else {
+                    if (isFK(line)) extractFK(line);
+                    else extractColumn(line);
+                }
             }
             i++;
         }
+        return table;
     }
+
 
     private void extractTableName(String line) {
         int idxStart = "create table ".length();
@@ -49,12 +56,40 @@ public final class TableBlockProcessor {
 
     private String extractPrefix(String tableName) {
         int idxStart = tableName.indexOf("_");
-        int idxEnd = tableName.indexOf("_", idxStart);
+        int idxEnd = tableName.indexOf("_", ++idxStart);
         return tableName.substring(idxStart, idxEnd);
     }
 
-    private String extractPK(String line) {
-        return line.contains(parameterService.getCurrentIdColumn()) ? parameterService.getCurrentIdColumn() : null;
+    private void extractPK(String line) {
+        if (line.contains(parameterService.getCurrentIdColumn())) table.setPk(parameterService.getCurrentIdColumn());
+    }
+
+    private boolean isFK(String line) {
+        return line.contains("NB_") && line.contains("_Id");
+    }
+
+    private void extractFK(String line) {
+        int idxStart = line.indexOf("NB_");
+        int idxEnd = line.indexOf("_Id") + "_Id".length();
+        table.addFk(line.substring(idxStart, idxEnd));
+    }
+
+    private boolean isConstraint(String line) {
+        return line.trim().startsWith("constraint");
+    }
+
+    private void extractColumn(String line) {
+        line = line.trim();
+        int endIdx = line.indexOf(" ");
+        table.addColumn(line.substring(0, endIdx));
+    }
+
+    private void extractConstraint() {
+
+    }
+
+    private boolean isEnd(String line) {
+        return line.trim().equals(")");
     }
 
 }
