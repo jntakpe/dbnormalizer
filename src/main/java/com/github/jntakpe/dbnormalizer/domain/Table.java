@@ -1,7 +1,7 @@
 package com.github.jntakpe.dbnormalizer.domain;
 
-import java.util.HashSet;
-import java.util.Set;
+import java.util.LinkedList;
+import java.util.List;
 
 /**
  * Bean représentant une table
@@ -14,13 +14,13 @@ public class Table {
 
     private String prefix;
 
-    private Set<String> columns = new HashSet<>();
+    private List<String> columns = new LinkedList<>();
 
     private String pk;
 
-    private Set<String> fks = new HashSet<>();;
+    private List<String> fks = new LinkedList<>();;
 
-    private Set<String> constraints = new HashSet<>();;
+    private List<String> constraints = new LinkedList<>();;
 
     public String getName() {
         return name;
@@ -38,11 +38,11 @@ public class Table {
         this.prefix = prefix;
     }
 
-    public Set<String> getColumns() {
+    public List<String> getColumns() {
         return columns;
     }
 
-    public void setColumns(Set<String> columns) {
+    public void setColumns(List<String> columns) {
         this.columns = columns;
     }
 
@@ -58,11 +58,11 @@ public class Table {
         this.pk = pk;
     }
 
-    public Set<String> getFks() {
+    public List<String> getFks() {
         return fks;
     }
 
-    public void setFks(Set<String> fks) {
+    public void setFks(List<String> fks) {
         this.fks = fks;
     }
 
@@ -70,11 +70,11 @@ public class Table {
         fks.add(fk);
     }
 
-    public Set<String> getConstraints() {
+    public List<String> getConstraints() {
         return constraints;
     }
 
-    public void setConstraints(Set<String> constraints) {
+    public void setConstraints(List<String> constraints) {
         this.constraints = constraints;
     }
 

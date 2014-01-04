@@ -1,7 +1,9 @@
 package com.github.jntakpe.dbnormalizer;
 
-import com.github.jntakpe.dbnormalizer.domain.Table;
+import com.github.jntakpe.dbnormalizer.domain.FileInfos;
+import com.github.jntakpe.dbnormalizer.domain.JoinFI;
 import com.github.jntakpe.dbnormalizer.service.FileService;
+import com.github.jntakpe.dbnormalizer.service.TransformService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationContext;
@@ -22,8 +24,10 @@ public class DBNormalizer {
         ApplicationContext ac = new ClassPathXmlApplicationContext("classpath:/spring-context.xml");
         LOGGER.debug("Contexte Spring démarré");
         FileService fileService = ac.getBean(FileService.class);
-        Set<Table> tables = fileService.findSQLScripts(); //Lecture des fichiers
-
+        TransformService transformService = ac.getBean(TransformService.class);
+        Set<FileInfos> currentFilesInfos = fileService.readDir(); //Lecture des fichiers
+        Set<JoinFI> fullContext = transformService.convertAll(currentFilesInfos);
+        fileService.transformDir(fullContext);
         LOGGER.info("Fin des traitements");
     }
 

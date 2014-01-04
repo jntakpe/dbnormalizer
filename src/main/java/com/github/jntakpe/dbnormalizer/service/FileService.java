@@ -1,6 +1,9 @@
 package com.github.jntakpe.dbnormalizer.service;
 
+import com.github.jntakpe.dbnormalizer.domain.FileInfos;
+import com.github.jntakpe.dbnormalizer.domain.JoinFI;
 import com.github.jntakpe.dbnormalizer.domain.Table;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,7 +18,9 @@ import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.HashSet;
+import java.util.LinkedHashSet;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -29,30 +34,56 @@ public class FileService {
     @Autowired
     private ParameterService parameterService;
 
+    @Autowired
+    private TransformService transformService;
+
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
     @Value("${input.dir}")
     private String inputDir;
 
-    public Set<Table> findSQLScripts() {
+    public Set<FileInfos> readDir() {
         Assert.notNull(inputDir, "Lecture d'entrée non renseigné");
         logger.info("Lecture du répertoire : {}", inputDir);
         Path dirPath = Paths.get(inputDir);
         Assert.isTrue(Files.exists(dirPath), "Le répertoire d'entrée n'existe pas");
-        Set<Table> tables = new HashSet<>();
+        Set<FileInfos> filesInfos = new LinkedHashSet<>();
         try (DirectoryStream<Path> stream = Files.newDirectoryStream(dirPath, "*.sql")) {
             for (Path filePath : stream)
-                tables.addAll(read(filePath));
+                filesInfos.add(read(filePath));
         } catch (IOException e) {
             e.printStackTrace();
             throw new RuntimeException("Erreur lors de la lecture du répertoire d'entrée", e);
         }
-        return tables;
+        logger.info("Fin de la lecture du répertoire : {}", inputDir);
+        return filesInfos;
     }
 
-    public Set<Table> read(Path path) {
+    public void transformDir(Set<JoinFI> context) {
+        logger.info("Transformation du contenu du répertoire : {}", inputDir);
+        Path dirPath = Paths.get(inputDir);
+        for (JoinFI fi : context) {
+            transformService.convert(readAsString(fi.getPath()), fi);
+        }
+        logger.info("Fin de la transformation du contenu du répertoire : {}", inputDir);
+    }
+
+    private String readAsString(Path path) {
+        List<String> lines;
+        try {
+            lines = Files.readAllLines(path, StandardCharsets.ISO_8859_1);
+        } catch (IOException e) {
+            e.printStackTrace();
+            throw new RuntimeException("Erreur lors de la lecture du fichier : " + path, e);
+        }
+        return StringUtils.join(lines, System.getProperty("line.separator"));
+    }
+
+    private FileInfos read(Path path) {
         logger.info("Lecture du fichier {}", path);
-        Set<Table> tables = new HashSet<>();
+        FileInfos fileInfos = new FileInfos(path);
+        List<Table> tables = new LinkedList<>();
+        List<String> indexes = new LinkedList<>();
         try (BufferedReader reader = Files.newBufferedReader(path, StandardCharsets.ISO_8859_1)) {
             String line;
             TableBlockProcessor tableBlockProcessor;
@@ -60,17 +91,27 @@ public class FileService {
                 if (isTableLine(line)) {
                     tableBlockProcessor = new TableBlockProcessor(reader, line, parameterService);
                     tables.add(tableBlockProcessor.process());
-                }
+                } else if (isIndexLine(line)) indexes.add(extractIndex(line));
             }
         } catch (IOException e) {
             e.printStackTrace();
             throw new RuntimeException("Erreur lors de la lecture du fichier : " + path, e);
         }
+        fileInfos.setTables(tables);
+        fileInfos.setIndexes(indexes);
         logger.info("Fin de la lecture du fichier {}", path);
-        return tables;
+        return fileInfos;
     }
 
     private boolean isTableLine(String line) {
         return line != null && line.contains("create table");
+    }
+
+    private boolean isIndexLine(String line) {
+        return line.startsWith("create index IX_");
+    }
+
+    private String extractIndex(String line) {
+        return line.substring("create index ".length(), line.indexOf("on T")).trim();
     }
 }
