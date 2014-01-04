@@ -1,7 +1,6 @@
-package com.github.jntakpe.dbnormalizer.processor;
+package com.github.jntakpe.dbnormalizer.service;
 
 import com.github.jntakpe.dbnormalizer.domain.Table;
-import com.github.jntakpe.dbnormalizer.service.ParameterService;
 import org.apache.commons.lang3.StringUtils;
 
 import java.io.BufferedReader;
