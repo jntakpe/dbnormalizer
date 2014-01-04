@@ -78,6 +78,10 @@ public class Table {
         this.constraints = constraints;
     }
 
+    public void addConstraint(String constraint) {
+        constraints.add(constraint);
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;

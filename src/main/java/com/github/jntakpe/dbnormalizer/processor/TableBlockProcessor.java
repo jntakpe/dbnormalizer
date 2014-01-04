@@ -34,7 +34,7 @@ public final class TableBlockProcessor {
             if (i == 0) {
                 extractPK(line);
             } else {
-                if (isConstraint(line)) extractConstraint();
+                if (isConstraint(line)) extractConstraint(line);
                 else {
                     if (isFK(line)) extractFK(line);
                     else extractColumn(line);
@@ -84,8 +84,11 @@ public final class TableBlockProcessor {
         table.addColumn(line.substring(0, endIdx));
     }
 
-    private void extractConstraint() {
-
+    private void extractConstraint(String line) {
+        line = line.trim();
+        int startIdx = line.indexOf(" ");
+        int endIdx = line.indexOf(" ", ++startIdx);
+        table.addConstraint(line.substring(startIdx, endIdx));
     }
 
     private boolean isEnd(String line) {

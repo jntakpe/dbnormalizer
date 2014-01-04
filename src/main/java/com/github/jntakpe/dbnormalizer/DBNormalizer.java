@@ -1,10 +1,13 @@
 package com.github.jntakpe.dbnormalizer;
 
-import com.github.jntakpe.dbnormalizer.service.DirReader;
+import com.github.jntakpe.dbnormalizer.domain.Table;
+import com.github.jntakpe.dbnormalizer.service.FileService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
+
+import java.util.Set;
 
 /**
  * Classe mère de l'application
@@ -18,10 +21,11 @@ public class DBNormalizer {
     public static void main(String[] args) {
         ApplicationContext ac = new ClassPathXmlApplicationContext("classpath:/spring-context.xml");
         LOGGER.debug("Contexte Spring démarré");
-        DirReader dirReader = ac.getBean(DirReader.class);
-        dirReader.read();
-    }
+        FileService fileService = ac.getBean(FileService.class);
+        Set<Table> tables = fileService.findSQLScripts(); //Lecture des fichiers
 
+        LOGGER.info("Fin des traitements");
+    }
 
 
 }
