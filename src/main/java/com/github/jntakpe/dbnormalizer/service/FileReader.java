@@ -2,6 +2,7 @@ package com.github.jntakpe.dbnormalizer.service;
 
 import com.github.jntakpe.dbnormalizer.domain.Table;
 import com.github.jntakpe.dbnormalizer.processor.TableBlockProcessor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.io.BufferedReader;
@@ -18,14 +19,18 @@ import java.nio.file.Path;
 @Service
 public class FileReader {
 
+    @Autowired
+    private ParameterService parameterService;
+
     public void read(Path path) {
-        Table table = new Table();
+        Table table;
         try (BufferedReader reader = Files.newBufferedReader(path, StandardCharsets.ISO_8859_1)) {
             String line;
             TableBlockProcessor tableBlockProcessor = null;
             while ((line = reader.readLine()) != null) {
                 if (isTableLine(line)) {
-                    tableBlockProcessor = new TableBlockProcessor(line);
+                    tableBlockProcessor = new TableBlockProcessor(reader, line, parameterService);
+                    table = tableBlockProcessor.process();
                 }
             }
         } catch (IOException e) {
