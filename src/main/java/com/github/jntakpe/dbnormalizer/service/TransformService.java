@@ -38,12 +38,15 @@ public class TransformService {
     }
 
     public String convert(String fileContent, JoinFI context) {
-        FileInfos curFI = context.getCurrentFI();
         int size = context.getCurrentFI().getTables().size();
         for (int i = 0; i < size; i++) {
             fileContent = transformTable(fileContent, context, i);
         }
-        return "";
+        size = context.getCurrentFI().getIndexes().size();
+        for (int i = 0; i < size; i++) {
+            fileContent = transformIndex(fileContent, context, i);
+        }
+        return fileContent;
     }
 
     private String transformTable(String fileContent, JoinFI context, int idx) {
@@ -52,15 +55,27 @@ public class TransformService {
         fileContent = fileContent.replaceAll(current.getName(), target.getName());
         fileContent = fileContent.replaceAll(current.getPk(), target.getPk());
         int size = current.getColumns().size();
-        for (int i = 0; i < size; i++)
-            fileContent = fileContent.replaceAll(current.getColumns().get(i), target.getColumns().get(i));
+        if (size != 0) {
+            for (int i = 0; i < size; i++)
+                fileContent = fileContent.replaceAll(current.getColumns().get(i), target.getColumns().get(i));
+        }
         size = current.getConstraints().size();
-        for (int i = 0; i < size; i++)
-            fileContent = fileContent.replaceAll(current.getConstraints().get(i), target.getConstraints().get(i));
+        if (size != 0) {
+            for (int i = 0; i < size; i++)
+                fileContent = fileContent.replaceAll(current.getConstraints().get(i), target.getConstraints().get(i));
+        }
         size = current.getFks().size();
-        for (int i = 0; i < size; i++)
-            fileContent = fileContent.replaceAll(current.getFks().get(i), target.getFks().get(i));
+        if (size != 0) {
+            for (int i = 0; i < size; i++)
+                fileContent = fileContent.replaceAll(current.getFks().get(i), target.getFks().get(i));
+        }
         return fileContent;
+    }
+
+    private String transformIndex(String fileContent, JoinFI context, int idx) {
+        String current = context.getCurrentFI().getIndexes().get(idx);
+        String target = context.getTargetFI().getIndexes().get(idx);
+        return fileContent.replaceAll(current, target);
     }
 
     private Table converTable(Table table) {
@@ -70,6 +85,7 @@ public class TransformService {
         target.setPk(convertPk(target.getPrefix()));
         target.setColumns(convertColumns(table.getColumns()));
         target.setConstraints(convertConstraint(table));
+        target.setFks(convertFks(table));
         return target;
     }
 
@@ -110,6 +126,15 @@ public class TransformService {
         index = index.substring(0, index.lastIndexOf("_"));
         String col = "ID" + index.substring(index.lastIndexOf("_"));
         return index.substring(0, 7) + col;
+    }
+
+    private List<String> convertFks(Table table) {
+        List<String> fks = new LinkedList<>();
+        for (String fk : table.getFks()) {
+            String prefix = fk.substring(fk.indexOf("_") + 1, fk.lastIndexOf("_"));
+            fks.add("ID_" + prefix);
+        }
+        return fks;
     }
 
 }
