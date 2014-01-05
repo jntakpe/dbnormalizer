@@ -14,14 +14,8 @@ import org.springframework.util.Assert;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.DirectoryStream;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.LinkedHashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Set;
+import java.nio.file.*;
+import java.util.*;
 
 /**
  * Services à la lecture et écriture d'un fichier
@@ -42,6 +36,9 @@ public class FileService {
     @Value("${input.dir}")
     private String inputDir;
 
+    @Value("${output.dir}")
+    private String outputDir;
+
     public Set<FileInfos> readDir() {
         Assert.notNull(inputDir, "Lecture d'entrée non renseigné");
         logger.info("Lecture du répertoire : {}", inputDir);
@@ -61,11 +58,22 @@ public class FileService {
 
     public void transformDir(Set<JoinFI> context) {
         logger.info("Transformation du contenu du répertoire : {}", inputDir);
-        Path dirPath = Paths.get(inputDir);
         for (JoinFI fi : context) {
-            transformService.convert(readAsString(fi.getPath()), fi);
+            String fileContent = transformService.convert(readAsString(fi.getPath()), fi);
+            write(fileContent, fi.getPath().getFileName().toString());
         }
         logger.info("Fin de la transformation du contenu du répertoire : {}", inputDir);
+    }
+
+    public void write(String fileContent, String fileName) {
+        Path path = Paths.get(outputDir, fileName);
+        try {
+            Files.write(path, fileContent.getBytes(), StandardOpenOption.CREATE);
+        } catch (IOException e) {
+            e.printStackTrace();
+            throw new RuntimeException("Erreur lors de l'écriture du fichier : " + path, e);
+        }
+        logger.info("Ecriture du fichier {} terminé", path);
     }
 
     private String readAsString(Path path) {
@@ -76,7 +84,11 @@ public class FileService {
             e.printStackTrace();
             throw new RuntimeException("Erreur lors de la lecture du fichier : " + path, e);
         }
-        return StringUtils.join(lines, System.getProperty("line.separator"));
+        List<String> noVersionLines = new ArrayList<>(lines.size());
+        for (String line : lines) {
+            if (!line.contains("NB_Version")) noVersionLines.add(line);
+        }
+        return StringUtils.join(noVersionLines, System.getProperty("line.separator"));
     }
 
     private FileInfos read(Path path) {

@@ -3,6 +3,7 @@ package com.github.jntakpe.dbnormalizer.service;
 import com.github.jntakpe.dbnormalizer.domain.FileInfos;
 import com.github.jntakpe.dbnormalizer.domain.JoinFI;
 import com.github.jntakpe.dbnormalizer.domain.Table;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -46,6 +47,7 @@ public class TransformService {
         for (int i = 0; i < size; i++) {
             fileContent = transformIndex(fileContent, context, i);
         }
+        fileContent = addVersion(fileContent);
         return fileContent;
     }
 
@@ -53,7 +55,7 @@ public class TransformService {
         Table current = context.getCurrentFI().getTables().get(idx);
         Table target = context.getTargetFI().getTables().get(idx);
         fileContent = fileContent.replaceAll(current.getName(), target.getName());
-        fileContent = fileContent.replaceAll(current.getPk(), target.getPk());
+        if (current.getPk() != null) fileContent = transformPk(fileContent, target);
         int size = current.getColumns().size();
         if (size != 0) {
             for (int i = 0; i < size; i++)
@@ -72,6 +74,12 @@ public class TransformService {
         return fileContent;
     }
 
+    private String transformPk(String fileContent, Table target) {
+        String currentName = target.getName() + " (" + System.getProperty("line.separator") + "   NB_Id";
+        String targetName = target.getName() + " (" + System.getProperty("line.separator") + "   " + target.getPk();
+        return StringUtils.replace(fileContent, currentName, targetName);
+    }
+
     private String transformIndex(String fileContent, JoinFI context, int idx) {
         String current = context.getCurrentFI().getIndexes().get(idx);
         String target = context.getTargetFI().getIndexes().get(idx);
@@ -82,9 +90,9 @@ public class TransformService {
         Table target = new Table();
         target.setPrefix(parameterService.getTargetTablePrefix());
         target.setName(converTableName(table.getName()));
-        target.setPk(convertPk(target.getPrefix()));
+        target.setPk(convertPk(table.getPrefix()));
         target.setColumns(convertColumns(table.getColumns()));
-        target.setConstraints(convertConstraint(table));
+        target.setConstraints(convertConstraint(table, target));
         target.setFks(convertFks(table));
         return target;
     }
@@ -112,11 +120,11 @@ public class TransformService {
         return target;
     }
 
-    private List<String> convertConstraint(Table table) {
+    private List<String> convertConstraint(Table table, Table tar) {
         List<String> constraints = table.getConstraints();
         List<String> target = new LinkedList<>();
         for (String constraint : constraints) {
-            if (constraint.startsWith("PK_")) target.add("PK_" + table.getName());
+            if (constraint.startsWith("PK_")) target.add("PK_" + tar.getName());
             else target.add(constraint.replace("UC_", "IX_"));
         }
         return target;
@@ -125,7 +133,7 @@ public class TransformService {
     private String convertIndex(String index) {
         index = index.substring(0, index.lastIndexOf("_"));
         String col = "ID" + index.substring(index.lastIndexOf("_"));
-        return index.substring(0, 7) + col;
+        return index.substring(0, 6) + "_" + col;
     }
 
     private List<String> convertFks(Table table) {
@@ -135,6 +143,14 @@ public class TransformService {
             fks.add("ID_" + prefix);
         }
         return fks;
+    }
+
+    private String addVersion(String fileContent) {
+        return fileContent.replaceAll("constraint PK_", "   LB_AgentCreation     varchar(50)          not null,\n" +
+                "   LB_AgentDerniereMaj  varchar(50)          not null,\n" +
+                "   DT_Creation          datetime             not null,\n" +
+                "   DT_DerniereMaj       datetime             not null,\n" +
+                "   constraint PK_");
     }
 
 }
