@@ -39,14 +39,15 @@ public class TransformService {
     }
 
     public String convert(String fileContent, JoinFI context) {
-        int size = context.getCurrentFI().getTables().size();
-        for (int i = 0; i < size; i++) {
-            fileContent = transformTable(fileContent, context, i);
-        }
-        size = context.getCurrentFI().getIndexes().size();
+        int size = context.getCurrentFI().getIndexes().size();
         for (int i = 0; i < size; i++) {
             fileContent = transformIndex(fileContent, context, i);
         }
+         size = context.getCurrentFI().getTables().size();
+        for (int i = 0; i < size; i++) {
+            fileContent = transformTable(fileContent, context, i);
+        }
+
         fileContent = addVersion(fileContent);
         return fileContent;
     }
@@ -145,9 +146,13 @@ public class TransformService {
     }
 
     private String convertIndex(String index) {
-        index = index.substring(0, index.lastIndexOf("_"));
-        String col = "ID" + index.substring(index.lastIndexOf("_"));
-        return index.substring(0, 6) + "_" + col;
+        String target = "create index IX_";
+        String prefix = index.substring(index.indexOf("on T_"));
+        int idx = prefix.indexOf("_") + 1;
+        prefix = prefix.substring(idx, prefix.indexOf("_", idx));
+        int idxPfx = index.indexOf("_") + 1;
+        String prefixID = index.substring(idxPfx, index.indexOf("_", idxPfx));
+        return target + prefix + "_ID_" + prefixID  +index.substring(index.lastIndexOf(" on"));
     }
 
     private List<String> convertFks(Table table) {

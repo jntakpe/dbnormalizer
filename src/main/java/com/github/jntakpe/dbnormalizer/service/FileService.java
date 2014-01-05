@@ -124,6 +124,6 @@ public class FileService {
     }
 
     private String extractIndex(String line) {
-        return line.substring("create index ".length(), line.indexOf("on T")).trim();
+        return line.substring(0, line.lastIndexOf(" "));
     }
 }
