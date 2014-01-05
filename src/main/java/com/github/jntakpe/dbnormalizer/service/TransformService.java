@@ -71,6 +71,8 @@ public class TransformService {
             for (int i = 0; i < size; i++)
                 fileContent = fileContent.replaceAll(current.getFks().get(i), target.getFks().get(i));
         }
+        fileContent = transformCPK(fileContent, target);
+        fileContent = transformFK(fileContent, target);
         return fileContent;
     }
 
@@ -78,6 +80,18 @@ public class TransformService {
         String currentName = target.getName() + " (" + System.getProperty("line.separator") + "   NB_Id";
         String targetName = target.getName() + " (" + System.getProperty("line.separator") + "   " + target.getPk();
         return StringUtils.replace(fileContent, currentName, targetName);
+    }
+
+    private String transformCPK(String fileContent, Table table) {
+        String current = "constraint PK_" + table.getName() + " primary key nonclustered (NB_Id)";
+        String target = "constraint PK_" + table.getName() + " primary key nonclustered (" + table.getPk() + ")";
+        return StringUtils.replace(fileContent, current, target);
+    }
+
+    private String transformFK(String fileContent, Table table) {
+        String current = "references " + table.getName() + " (NB_Id)";
+        String target = "references " + table.getName() + " (" + table.getPk() + ")";
+        return StringUtils.replace(fileContent, current, target);
     }
 
     private String transformIndex(String fileContent, JoinFI context, int idx) {
